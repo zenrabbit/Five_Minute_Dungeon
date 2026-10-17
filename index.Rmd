@@ -21,9 +21,7 @@ Weekly experiments and data collected by teams.
 #install.packages("tidyverse") #only need to do this once then mute it with #
 library(tidyverse)
 #data <- read_csv(url("https://ndownloader.figshare.com/files/17813387")) #read from web for updates
-data <- read_csv("data/5MD_2022.csv")
-data.2 <- read_csv("data/5MD_2022_2.csv") %>% 
-  mutate(winning = case_when(outcome == "won" ~ 1, outcome == "lost" ~ 0))
+data <- read_csv("data/5MD.csv")
 
 #transform data and tidy
 #rename time to remaining so it is more clear
@@ -47,29 +45,68 @@ data <- data %>%
 
 #### Viz  
 ```{r, viz, warning=FALSE, message=FALSE}
+#explore groups
+ggplot(data, aes(class, time_remaining)) +
+  geom_boxplot() +
+  theme_bw()
+
+ggplot(data, aes(class, time_remaining)) +
+  geom_violin() +
+  geom_jitter() +
+  theme_bw()
+
+ggplot(data, aes(class, winning)) +
+  geom_col() +
+  theme_bw()
+
 
 #explore continuous variation
-ggplot(data, aes(players, time_remaining)) +
+ggplot(data, aes(players, time_remaining, color = class)) +
   geom_point(size = 2) +
   xlim(c(2,5)) +
   geom_smooth(method = lm) +
-  scale_color_brewer(palette = "Set1")
+  scale_color_brewer(palette = "Set1") +
+  theme_bw()
 
-ggplot(data, aes(total_cards, time_remaining)) +
+ggplot(data, aes(total_cards, time_remaining, color = class)) +
   geom_point(size = 2) +
    geom_smooth(method = lm) +
-  scale_color_brewer(palette = "Set1")
+  scale_color_brewer(palette = "Set1") +
+  theme_bw()
 
-ggplot(data, aes(time_remaining, joy)) +
+ggplot(data, aes(time_remaining, joy, color = class)) +
   geom_point(size = 2) +
    geom_smooth(method = lm) +
-  scale_color_brewer(palette = "Set1")
-
-ggplot(data.2, aes(strategy, winning, fill = as.character(rep))) +
-  geom_col() +
-  scale_fill_brewer(palette = "Set1") +
-  labs(fill = "week or rep")
+  scale_color_brewer(palette = "Set1") +
+  theme_bw()
 
 ```
 
+#### Models
+```{r, models, warning=FALSE, message=FALSE}
+#test of whether net difference in gaming is a win across both classes
+t.test(data$time_remaining, mu = 0)
 
+#correlations/regressions
+
+#groups
+m1 <- glm(time_remaining~players, data = data)
+summary(m1)
+#plot(m1)
+anova(m1, test="Chisq")
+
+m2 <- glm(time_remaining~players*class, data = data)
+summary(m2)
+anova(m2, test="Chisq")
+
+m3 <- glm(winning~players, data = data)
+summary(m3)
+anova(m3, test="Chisq")
+
+cor.test(data$players, data$time_remaining)
+
+```
+
+#### Interpretations  
+1. Larger teams are not necessarily more effective.  
+2. Time and joy not related but might be better to test won-lost as response.  
